@@ -1,0 +1,12 @@
+etl_db:
+  outputs:
+    prod:
+      type: postgres
+      host: "{{ env_var('ETL_PG_HOST') }}"
+      port: "{{ env_var('ETL_PG_PORT') | int }}"
+      user: "{{ env_var('ETL_PG_USER') }}"
+      password: "{{ env_var('ETL_PG_PASSWORD') }}"
+      dbname: "{{ env_var('ETL_PG_DATABASE') }}"
+      schema: prep
+      threads: 4
+  target: prod
