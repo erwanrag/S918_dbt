@@ -1,4 +1,17 @@
-
+# dbt artifacts
 target/
 dbt_packages/
 logs/
+.user.yml
+
+# Python
+**/__pycache__/
+**/*.pyc
+
+# Coverage
+.coverage
+htmlcov/
+
+# Reports (générés dynamiquement)
+PREP_ANALYSIS_REPORT.json
+PREP_ANALYSIS_REPORT.md
