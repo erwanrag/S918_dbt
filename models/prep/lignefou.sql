@@ -1,5 +1,5 @@
 {{ config(
-    materialized='table',
+    materialized='incremental',
     meta = {
         'dagster': {
             'group': 'prep',
@@ -7,18 +7,24 @@
             'layer': 'prep'
         },
     },
+    unique_key='uniq_id',
+    incremental_strategy='merge',
+    on_schema_change='sync_all_columns',
+    post_hook=[
+        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'lignefou') }} s WHERE s.uniq_id = t.uniq_id AND s._etl_is_current = TRUE){% endif %}"
+    ]
 ) }}
 
     /*
     ============================================================================
     PREP MODEL : lignefou
     ============================================================================
-    Generated : 2025-12-29 11:37:43
+    Generated : 2025-12-30 15:27:27
     Source    : ods.lignefou
-    Rows ODS  : 19,992
-    Cols ODS  : 348
-    Cols PREP : 171 (+ _prep_loaded_at)
-    Strategy  : TABLE
+    Rows ODS  : 20,356
+    Cols ODS  : 350
+    Cols PREP : 172 (+ _prep_loaded_at)
+    Strategy  : INCREMENTAL
     ============================================================================
     */
 
@@ -193,6 +199,14 @@
     "_etl_loaded_at" AS _etl_loaded_at,
     "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'lignefou') }}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

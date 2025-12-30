@@ -11,8 +11,7 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'hisprixa') }} s WHERE s.cod_fou = t.cod_fou AND s.cod_pro = t.cod_pro AND s.dat_px = t.dat_px){% endif %}",
-        "CREATE UNIQUE INDEX IF NOT EXISTS hisprixa_pkey ON {{ this }} USING btree (cod_fou, cod_pro, dat_px)",
+        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'hisprixa') }} s WHERE s.cod_fou = t.cod_fou AND s.cod_pro = t.cod_pro AND s.dat_px = t.dat_px AND s._etl_is_current = TRUE){% endif %}",
         "CREATE INDEX IF NOT EXISTS idx_hisprixa_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
         "ANALYZE {{ this }}"
     ]
@@ -22,11 +21,11 @@
     ============================================================================
     PREP MODEL : hisprixa
     ============================================================================
-    Generated : 2025-12-29 11:37:37
+    Generated : 2025-12-30 15:27:05
     Source    : ods.hisprixa
-    Rows ODS  : 116,495
-    Cols ODS  : 48
-    Cols PREP : 41 (+ _prep_loaded_at)
+    Rows ODS  : 116,629
+    Cols ODS  : 51
+    Cols PREP : 42 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -72,12 +71,14 @@
     "hr_mod" AS hr_mod,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_run_id" AS _etl_run_id,
+    "_etl_is_current" AS _etl_is_current,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'hisprixa') }}
-{% if is_incremental() %}
-WHERE "_etl_valid_from" > (
-    SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
-    FROM {{ this }}
-)
-{% endif %}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

@@ -12,9 +12,9 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'client') }} s WHERE s.cod_cli = t.cod_cli){% endif %}",
-        "CREATE UNIQUE INDEX IF NOT EXISTS client_pkey ON {{ this }} USING btree (cod_cli)",
-        "CREATE INDEX IF NOT EXISTS idx_client_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
+        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'client') }} s WHERE s.cod_cli = t.cod_cli AND s._etl_is_current = TRUE){% endif %}",
+        "CREATE INDEX IF NOT EXISTS idx_client_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_client_pk_current ON {{ this }} USING btree (cod_cli, _etl_is_current)",
         "ANALYZE {{ this }}"
     ]
 ) }}
@@ -23,12 +23,12 @@
     ============================================================================
     PREP MODEL : client
     ============================================================================
-    Generated : 2025-12-29 11:37:31
+    Generated : 2025-12-30 15:36:15
     Source    : ods.client
 Description : Table des clients
-    Rows ODS  : 15,422
-    Cols ODS  : 316
-    Cols PREP : 122 (+ _prep_loaded_at)
+    Rows ODS  : 15,424
+    Cols ODS  : 319
+    Cols PREP : 125 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -47,6 +47,8 @@ Description : Table des clients
     "usr_mod" AS usr_mod,
     "dat_mod" AS dat_mod,
     "zal_1" AS zal_1,
+    "zal_2" AS zal_2,
+    "zal_5" AS zal_5,
     "znu_1" AS znu_1,
     "znu_2" AS znu_2,
     "znu_3" AS znu_3,
@@ -154,13 +156,15 @@ Description : Table des clients
     "no_port" AS no_port,
     "fac_liv" AS fac_liv,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
     "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'client') }}
-{% if is_incremental() %}
-WHERE "_etl_valid_from" > (
-    SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
-    FROM {{ this }}
-)
-{% endif %}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

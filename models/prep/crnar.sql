@@ -12,8 +12,7 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'crnar') }} s WHERE s.cod_crn = t.cod_crn AND s.cod_pc = t.cod_pc){% endif %}",
-        "CREATE UNIQUE INDEX IF NOT EXISTS crnar_pkey ON {{ this }} USING btree (cod_crn, cod_pc)",
+        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'crnar') }} s WHERE s.cod_crn = t.cod_crn AND s.cod_pc = t.cod_pc AND s._etl_is_current = TRUE){% endif %}",
         "CREATE INDEX IF NOT EXISTS idx_crnar_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
         "ANALYZE {{ this }}"
     ]
@@ -23,11 +22,11 @@
     ============================================================================
     PREP MODEL : crnar
     ============================================================================
-    Generated : 2025-12-29 11:37:29
+    Generated : 2025-12-30 15:26:56
     Source    : ods.crnar
 Description : Articles concurrents
-    Rows ODS  : 382,856
-    Cols ODS  : 56
+    Rows ODS  : 383,449
+    Cols ODS  : 59
     Cols PREP : 24 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
@@ -48,7 +47,6 @@ Description : Articles concurrents
     "px_vte" AS px_vte,
     "marque" AS marque,
     "zlo_1" AS zlo_1,
-    "zlo_2" AS zlo_2,
     "texte" AS texte,
     "cod_pro" AS cod_pro,
     "poid_brut_1" AS poid_brut_1,
@@ -57,12 +55,14 @@ Description : Articles concurrents
     "gencod-v" AS gencod_v,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_run_id" AS _etl_run_id,
+    "_etl_is_current" AS _etl_is_current,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'crnar') }}
-{% if is_incremental() %}
-WHERE "_etl_valid_from" > (
-    SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
-    FROM {{ this }}
-)
-{% endif %}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

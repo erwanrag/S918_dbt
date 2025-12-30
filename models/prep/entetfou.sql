@@ -1,5 +1,5 @@
 {{ config(
-    materialized='table',
+    materialized='incremental',
     meta = {
         'dagster': {
             'group': 'prep',
@@ -8,19 +8,25 @@
         },
         'description': 'Entêtes fournisseurs'
     },
+    unique_key='uniq_id',
+    incremental_strategy='merge',
+    on_schema_change='sync_all_columns',
+    post_hook=[
+        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'entetfou') }} s WHERE s.uniq_id = t.uniq_id AND s._etl_is_current = TRUE){% endif %}"
+    ]
 ) }}
 
     /*
     ============================================================================
     PREP MODEL : entetfou
     ============================================================================
-    Generated : 2025-12-29 11:37:32
+    Generated : 2025-12-30 15:26:59
     Source    : ods.entetfou
 Description : Entêtes fournisseurs
-    Rows ODS  : 6,548
-    Cols ODS  : 270
-    Cols PREP : 128 (+ _prep_loaded_at)
-    Strategy  : TABLE
+    Rows ODS  : 6,603
+    Cols ODS  : 272
+    Cols PREP : 129 (+ _prep_loaded_at)
+    Strategy  : INCREMENTAL
     ============================================================================
     */
 
@@ -152,6 +158,14 @@ Description : Entêtes fournisseurs
     "_etl_loaded_at" AS _etl_loaded_at,
     "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'entetfou') }}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

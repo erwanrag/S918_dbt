@@ -12,8 +12,7 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'clcondi') }} s WHERE s.uniq_id = t.uniq_id){% endif %}",
-        "CREATE UNIQUE INDEX IF NOT EXISTS clcondi_pkey ON {{ this }} USING btree (uniq_id)",
+        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'clcondi') }} s WHERE s.uniq_id = t.uniq_id AND s._etl_is_current = TRUE){% endif %}",
         "CREATE INDEX IF NOT EXISTS idx_clcondi_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
         "ANALYZE {{ this }}"
     ]
@@ -23,11 +22,11 @@
     ============================================================================
     PREP MODEL : clcondi
     ============================================================================
-    Generated : 2025-12-29 11:37:35
+    Generated : 2025-12-30 15:27:02
     Source    : ods.clcondi
 Description : Conditions clients
-    Rows ODS  : 430,008
-    Cols ODS  : 161
+    Rows ODS  : 430,012
+    Cols ODS  : 164
     Cols PREP : 65 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
@@ -73,7 +72,6 @@ Description : Conditions clients
     "px_vte_8" AS px_vte_8,
     "px_vte_9" AS px_vte_9,
     "px_vte_10" AS px_vte_10,
-    "applic" AS applic,
     "px_poi" AS px_poi,
     "px_cli" AS px_cli,
     "depot" AS depot,
@@ -98,12 +96,14 @@ Description : Conditions clients
     "uniq_id" AS uniq_id,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_run_id" AS _etl_run_id,
+    "_etl_is_current" AS _etl_is_current,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'clcondi') }}
-{% if is_incremental() %}
-WHERE "_etl_valid_from" > (
-    SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
-    FROM {{ this }}
-)
-{% endif %}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

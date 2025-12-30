@@ -12,8 +12,7 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'crn') }} s WHERE s.cod_crn = t.cod_crn){% endif %}",
-        "CREATE UNIQUE INDEX IF NOT EXISTS crn_pkey ON {{ this }} USING btree (cod_crn)",
+        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'crn') }} s WHERE s.cod_crn = t.cod_crn AND s._etl_is_current = TRUE){% endif %}",
         "CREATE INDEX IF NOT EXISTS idx_crn_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
         "ANALYZE {{ this }}"
     ]
@@ -23,12 +22,12 @@
     ============================================================================
     PREP MODEL : crn
     ============================================================================
-    Generated : 2025-12-29 11:37:28
+    Generated : 2025-12-30 15:26:54
     Source    : ods.crn
 Description : Sociétés concurrentes
     Rows ODS  : 837
-    Cols ODS  : 56
-    Cols PREP : 15 (+ _prep_loaded_at)
+    Cols ODS  : 59
+    Cols PREP : 16 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -48,12 +47,14 @@ Description : Sociétés concurrentes
     "no_info" AS no_info,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_run_id" AS _etl_run_id,
+    "_etl_is_current" AS _etl_is_current,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'crn') }}
-{% if is_incremental() %}
-WHERE "_etl_valid_from" > (
-    SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
-    FROM {{ this }}
-)
-{% endif %}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

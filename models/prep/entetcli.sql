@@ -1,5 +1,5 @@
 {{ config(
-    materialized='table',
+    materialized='incremental',
     meta = {
         'dagster': {
             'group': 'prep',
@@ -8,19 +8,25 @@
         },
         'description': 'Entêtes clients'
     },
+    unique_key='uniq_id',
+    incremental_strategy='merge',
+    on_schema_change='sync_all_columns',
+    post_hook=[
+        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'entetcli') }} s WHERE s.uniq_id = t.uniq_id AND s._etl_is_current = TRUE){% endif %}"
+    ]
 ) }}
 
     /*
     ============================================================================
     PREP MODEL : entetcli
     ============================================================================
-    Generated : 2025-12-29 11:37:37
+    Generated : 2025-12-30 15:27:04
     Source    : ods.entetcli
 Description : Entêtes clients
-    Rows ODS  : 15,092
-    Cols ODS  : 463
-    Cols PREP : 210 (+ _prep_loaded_at)
-    Strategy  : TABLE
+    Rows ODS  : 15,855
+    Cols ODS  : 465
+    Cols PREP : 211 (+ _prep_loaded_at)
+    Strategy  : INCREMENTAL
     ============================================================================
     */
 
@@ -234,6 +240,14 @@ Description : Entêtes clients
     "_etl_loaded_at" AS _etl_loaded_at,
     "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'entetcli') }}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

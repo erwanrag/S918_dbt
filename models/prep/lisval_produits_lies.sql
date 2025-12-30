@@ -14,12 +14,12 @@
     ============================================================================
     PREP MODEL : lisval_produits_lies
     ============================================================================
-    Generated : 2025-12-29 11:37:43
+    Generated : 2025-12-30 15:27:26
     Source    : ods.lisval_produits_lies
 Description : Produits liés
     Rows ODS  : 4,488
-    Cols ODS  : 80
-    Cols PREP : 9 (+ _prep_loaded_at)
+    Cols ODS  : 83
+    Cols PREP : 10 (+ _prep_loaded_at)
     Strategy  : TABLE
     ============================================================================
     */
@@ -33,6 +33,7 @@ Description : Produits liés
     "uniq_id" AS uniq_id,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_run_id" AS _etl_run_id,
+    "_etl_is_current" AS _etl_is_current,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'lisval_produits_lies') }}
     
