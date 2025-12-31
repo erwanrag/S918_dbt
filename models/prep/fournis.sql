@@ -11,8 +11,8 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'fournis') }} s WHERE s.cod_fou = t.cod_fou AND s._etl_is_current = TRUE){% endif %}",
-        "CREATE INDEX IF NOT EXISTS idx_fournis_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_fournis_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_fournis_pk_current ON {{ this }} USING btree (cod_fou, _etl_is_current)",
         "ANALYZE {{ this }}"
     ]
 ) }}
@@ -21,11 +21,11 @@
     ============================================================================
     PREP MODEL : fournis
     ============================================================================
-    Generated : 2025-12-30 15:27:03
+    Generated : 2025-12-31 12:04:30
     Source    : ods.fournis
     Rows ODS  : 8,433
     Cols ODS  : 219
-    Cols PREP : 92 (+ _prep_loaded_at)
+    Cols PREP : 93 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -67,6 +67,7 @@
     "dat_mod" AS dat_mod,
     "zal_1" AS zal_1,
     "zal_2" AS zal_2,
+    "zal_5" AS zal_5,
     "znu_1" AS znu_1,
     "znu_2" AS znu_2,
     "znu_3" AS znu_3,
@@ -120,8 +121,8 @@
     "ges_golda" AS ges_golda,
     "cod_fop" AS cod_fop,
     "_etl_valid_from" AS _etl_source_timestamp,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'fournis') }}
     WHERE "_etl_is_current" = TRUE

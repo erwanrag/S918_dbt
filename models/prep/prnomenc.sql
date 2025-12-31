@@ -1,5 +1,5 @@
 {{ config(
-    materialized='table',
+    materialized='incremental',
     meta = {
         'dagster': {
             'group': 'prep',
@@ -8,19 +8,27 @@
         },
         'description': 'Lignes nomenclature produits'
     },
+    unique_key=['cod_nmc', 'cod_pro', 'depot', 'ordre', 'type_nmc'],
+    incremental_strategy='merge',
+    on_schema_change='sync_all_columns',
+    post_hook=[
+        "CREATE INDEX IF NOT EXISTS idx_prnomenc_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_prnomenc_pk_current ON {{ this }} USING btree (cod_nmc, cod_pro, depot, ordre, type_nmc, _etl_is_current)",
+        "ANALYZE {{ this }}"
+    ]
 ) }}
 
     /*
     ============================================================================
     PREP MODEL : prnomenc
     ============================================================================
-    Generated : 2025-12-29 11:37:51
+    Generated : 2025-12-31 12:04:39
     Source    : ods.prnomenc
 Description : Lignes nomenclature produits
-    Rows ODS  : 18,964
-    Cols ODS  : 137
+    Rows ODS  : 18,965
+    Cols ODS  : 135
     Cols PREP : 29 (+ _prep_loaded_at)
-    Strategy  : TABLE
+    Strategy  : INCREMENTAL
     ============================================================================
     */
 
@@ -50,9 +58,16 @@ Description : Lignes nomenclature produits
     "no_info" AS no_info,
     "nb_cs3" AS nb_cs3,
     "cod_fou" AS cod_fou,
-    "_etl_loaded_at" AS _etl_loaded_at,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'prnomenc') }}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

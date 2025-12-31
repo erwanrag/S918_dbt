@@ -12,7 +12,9 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'entetcli') }} s WHERE s.uniq_id = t.uniq_id AND s._etl_is_current = TRUE){% endif %}"
+        "CREATE INDEX IF NOT EXISTS idx_entetcli_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_entetcli_pk_current ON {{ this }} USING btree (uniq_id, _etl_is_current)",
+        "ANALYZE {{ this }}"
     ]
 ) }}
 
@@ -20,12 +22,12 @@
     ============================================================================
     PREP MODEL : entetcli
     ============================================================================
-    Generated : 2025-12-30 15:27:04
+    Generated : 2025-12-31 12:04:35
     Source    : ods.entetcli
 Description : Entêtes clients
-    Rows ODS  : 15,855
-    Cols ODS  : 465
-    Cols PREP : 211 (+ _prep_loaded_at)
+    Rows ODS  : 15,361
+    Cols ODS  : 461
+    Cols PREP : 214 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -111,6 +113,7 @@ Description : Entêtes clients
     "mt_reg" AS mt_reg,
     "mt_acom" AS mt_acom,
     "zal_1" AS zal_1,
+    "zal_2" AS zal_2,
     "zal_3" AS zal_3,
     "zal_4" AS zal_4,
     "zal_5" AS zal_5,
@@ -174,6 +177,8 @@ Description : Entêtes clients
     "inc_deb" AS inc_deb,
     "trs_deb" AS trs_deb,
     "com_liv_1" AS com_liv_1,
+    "com_liv_2" AS com_liv_2,
+    "com_liv_3" AS com_liv_3,
     "adrfac4" AS adrfac4,
     "adrliv4" AS adrliv4,
     "cod_tlv" AS cod_tlv,
@@ -214,6 +219,7 @@ Description : Entêtes clients
     "dat_vald" AS dat_vald,
     "cod_for" AS cod_for,
     "cde_ini" AS cde_ini,
+    "typ_fac_edi" AS typ_fac_edi,
     "prix_franco" AS prix_franco,
     "poi_ini" AS poi_ini,
     "cod_site" AS cod_site,
@@ -237,10 +243,9 @@ Description : Entêtes clients
     "edt_cde" AS edt_cde,
     "edt_dev" AS edt_dev,
     "mt_titresto" AS mt_titresto,
-    "_etl_loaded_at" AS _etl_loaded_at,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'entetcli') }}
     WHERE "_etl_is_current" = TRUE

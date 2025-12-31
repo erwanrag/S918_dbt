@@ -14,7 +14,7 @@
     ============================================================================
     PREP MODEL : lisval_fou_production
     ============================================================================
-    Generated : 2025-12-30 15:27:26
+    Generated : 2025-12-30 17:00:13
     Source    : ods.lisval_fou_production
 Description : Liste fournisseurs production
     Rows ODS  : 5

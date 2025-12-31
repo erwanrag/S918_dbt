@@ -12,9 +12,8 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'histolig') }} s WHERE s.uniq_id = t.uniq_id){% endif %}",
-        "CREATE UNIQUE INDEX IF NOT EXISTS histolig_pkey ON {{ this }} USING btree (uniq_id)",
-        "CREATE INDEX IF NOT EXISTS idx_histolig_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_histolig_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_histolig_pk_current ON {{ this }} USING btree (uniq_id, _etl_is_current)",
         "ANALYZE {{ this }}"
     ]
 ) }}
@@ -23,12 +22,12 @@
     ============================================================================
     PREP MODEL : histolig
     ============================================================================
-    Generated : 2025-12-29 11:38:39
+    Generated : 2025-12-31 12:04:37
     Source    : ods.histolig
 Description : Historique lignes mouvements
-    Rows ODS  : 1,913,483
-    Cols ODS  : 442
-    Cols PREP : 213 (+ _prep_loaded_at)
+    Rows ODS  : 6,295
+    Cols ODS  : 445
+    Cols PREP : 204 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -58,7 +57,6 @@ Description : Historique lignes mouvements
     "qte" AS qte,
     "px_vte" AS px_vte,
     "remise1" AS remise1,
-    "remise2" AS remise2,
     "rem_app" AS rem_app,
     "refint" AS refint,
     "groupe" AS groupe,
@@ -85,6 +83,7 @@ Description : Historique lignes mouvements
     "px_ach_d" AS px_ach_d,
     "pmp" AS pmp,
     "zal_1" AS zal_1,
+    "zal_3" AS zal_3,
     "znu_3" AS znu_3,
     "znu_5" AS znu_5,
     "zta_1" AS zta_1,
@@ -92,7 +91,6 @@ Description : Historique lignes mouvements
     "zta_3" AS zta_3,
     "zta_4" AS zta_4,
     "zda_2" AS zda_2,
-    "zda_5" AS zda_5,
     "gratuit" AS gratuit,
     "forcer" AS forcer,
     "dat_liv" AS dat_liv,
@@ -104,19 +102,20 @@ Description : Historique lignes mouvements
     "conv_sto" AS conv_sto,
     "px_vte_i" AS px_vte_i,
     "dev_vte" AS dev_vte,
+    "nmc_lie" AS nmc_lie,
     "lien_nmc" AS lien_nmc,
     "maj_stk" AS maj_stk,
     "edt_nmc" AS edt_nmc,
     "conv_md" AS conv_md,
     "qte_cde" AS qte_cde,
-    "n_surlig" AS n_surlig,
     "longueur" AS longueur,
+    "largeur" AS largeur,
+    "hauteur" AS hauteur,
     "calc_uv" AS calc_uv,
     "qte_uc" AS qte_uc,
     "cal_marg" AS cal_marg,
     "px_rvt" AS px_rvt,
     "coef_dep" AS coef_dep,
-    "remise3" AS remise3,
     "poid_tot" AS poid_tot,
     "maj_stat" AS maj_stat,
     "sf_tar" AS sf_tar,
@@ -129,10 +128,8 @@ Description : Historique lignes mouvements
     "dat_ret" AS dat_ret,
     "garantie" AS garantie,
     "cde_cf" AS cde_cf,
-    "lig_fou" AS lig_fou,
     "zlo_1" AS zlo_1,
     "zlo_2" AS zlo_2,
-    "zlo_3" AS zlo_3,
     "zlo_5" AS zlo_5,
     "typ_rem_3" AS typ_rem_3,
     "qte_rlf" AS qte_rlf,
@@ -140,7 +137,6 @@ Description : Historique lignes mouvements
     "volume" AS volume,
     "zon_lib_1" AS zon_lib_1,
     "num_ave" AS num_ave,
-    "tx_com" AS tx_com,
     "no_of" AS no_of,
     "no_reafab" AS no_reafab,
     "no_reacons" AS no_reacons,
@@ -164,12 +160,9 @@ Description : Historique lignes mouvements
     "s3_tar" AS s3_tar,
     "s4_tar" AS s4_tar,
     "reg_fact" AS reg_fact,
-    "crit_cli_df" AS crit_cli_df,
-    "typ_gra" AS typ_gra,
     "nb_ua" AS nb_ua,
     "nb_uv" AS nb_uv,
     "pp_ua" AS pp_ua,
-    "pp_uv" AS pp_uv,
     "dat_acc" AS dat_acc,
     "dat_rll" AS dat_rll,
     "lien_frais" AS lien_frais,
@@ -177,7 +170,6 @@ Description : Historique lignes mouvements
     "poid_net" AS poid_net,
     "s3_famille" AS s3_famille,
     "s4_famille" AS s4_famille,
-    "list_crit" AS list_crit,
     "qui_v" AS qui_v,
     "num_lot" AS num_lot,
     "num_colis" AS num_colis,
@@ -216,7 +208,6 @@ Description : Historique lignes mouvements
     "mt_pa" AS mt_pa,
     "mt_pr" AS mt_pr,
     "mt_pm" AS mt_pm,
-    "nb_uv1" AS nb_uv1,
     "cod_op" AS cod_op,
     "MScod_fou" AS mscod_fou,
     "MScde_fou" AS mscde_fou,
@@ -240,18 +231,18 @@ Description : Historique lignes mouvements
     "marque" AS marque,
     "tare_p_2" AS tare_p_2,
     "no_deb" AS no_deb,
-    "lig_deb" AS lig_deb,
-    "cond_rem_2" AS cond_rem_2,
     "cod_nom" AS cod_nom,
     "mt_titresto" AS mt_titresto,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
     "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'histolig') }}
-{% if is_incremental() %}
-WHERE "_etl_valid_from" > (
-    SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
-    FROM {{ this }}
-)
-{% endif %}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

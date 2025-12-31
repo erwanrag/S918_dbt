@@ -11,7 +11,9 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'lignefou') }} s WHERE s.uniq_id = t.uniq_id AND s._etl_is_current = TRUE){% endif %}"
+        "CREATE INDEX IF NOT EXISTS idx_lignefou_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_lignefou_pk_current ON {{ this }} USING btree (uniq_id, _etl_is_current)",
+        "ANALYZE {{ this }}"
     ]
 ) }}
 
@@ -19,11 +21,11 @@
     ============================================================================
     PREP MODEL : lignefou
     ============================================================================
-    Generated : 2025-12-30 15:27:27
+    Generated : 2025-12-31 12:04:42
     Source    : ods.lignefou
-    Rows ODS  : 20,356
-    Cols ODS  : 350
-    Cols PREP : 172 (+ _prep_loaded_at)
+    Rows ODS  : 20,901
+    Cols ODS  : 346
+    Cols PREP : 171 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -196,10 +198,9 @@
     "gratuit" AS gratuit,
     "dat_enl" AS dat_enl,
     "cod_nom" AS cod_nom,
-    "_etl_loaded_at" AS _etl_loaded_at,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'lignefou') }}
     WHERE "_etl_is_current" = TRUE

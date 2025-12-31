@@ -11,8 +11,8 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'hisprixa') }} s WHERE s.cod_fou = t.cod_fou AND s.cod_pro = t.cod_pro AND s.dat_px = t.dat_px AND s._etl_is_current = TRUE){% endif %}",
-        "CREATE INDEX IF NOT EXISTS idx_hisprixa_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_hisprixa_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_hisprixa_pk_current ON {{ this }} USING btree (cod_fou, cod_pro, dat_px, _etl_is_current)",
         "ANALYZE {{ this }}"
     ]
 ) }}
@@ -21,9 +21,9 @@
     ============================================================================
     PREP MODEL : hisprixa
     ============================================================================
-    Generated : 2025-12-30 15:27:05
+    Generated : 2025-12-31 12:04:32
     Source    : ods.hisprixa
-    Rows ODS  : 116,629
+    Rows ODS  : 116,645
     Cols ODS  : 51
     Cols PREP : 42 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
@@ -70,8 +70,8 @@
     "px_ach_rq_10" AS px_ach_rq_10,
     "hr_mod" AS hr_mod,
     "_etl_valid_from" AS _etl_source_timestamp,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'hisprixa') }}
     WHERE "_etl_is_current" = TRUE

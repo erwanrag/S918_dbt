@@ -12,8 +12,8 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'crn') }} s WHERE s.cod_crn = t.cod_crn AND s._etl_is_current = TRUE){% endif %}",
-        "CREATE INDEX IF NOT EXISTS idx_crn_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_crn_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_crn_pk_current ON {{ this }} USING btree (cod_crn, _etl_is_current)",
         "ANALYZE {{ this }}"
     ]
 ) }}
@@ -22,7 +22,7 @@
     ============================================================================
     PREP MODEL : crn
     ============================================================================
-    Generated : 2025-12-30 15:26:54
+    Generated : 2025-12-31 12:04:27
     Source    : ods.crn
 Description : Sociétés concurrentes
     Rows ODS  : 837
@@ -46,8 +46,8 @@ Description : Sociétés concurrentes
     "num_fax" AS num_fax,
     "no_info" AS no_info,
     "_etl_valid_from" AS _etl_source_timestamp,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'crn') }}
     WHERE "_etl_is_current" = TRUE

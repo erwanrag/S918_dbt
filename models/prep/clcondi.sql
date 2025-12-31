@@ -12,8 +12,8 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'clcondi') }} s WHERE s.uniq_id = t.uniq_id AND s._etl_is_current = TRUE){% endif %}",
-        "CREATE INDEX IF NOT EXISTS idx_clcondi_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_clcondi_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_clcondi_pk_current ON {{ this }} USING btree (uniq_id, _etl_is_current)",
         "ANALYZE {{ this }}"
     ]
 ) }}
@@ -22,12 +22,12 @@
     ============================================================================
     PREP MODEL : clcondi
     ============================================================================
-    Generated : 2025-12-30 15:27:02
+    Generated : 2025-12-31 12:04:39
     Source    : ods.clcondi
 Description : Conditions clients
-    Rows ODS  : 430,012
+    Rows ODS  : 430,437
     Cols ODS  : 164
-    Cols PREP : 65 (+ _prep_loaded_at)
+    Cols PREP : 67 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -72,7 +72,9 @@ Description : Conditions clients
     "px_vte_8" AS px_vte_8,
     "px_vte_9" AS px_vte_9,
     "px_vte_10" AS px_vte_10,
+    "applic" AS applic,
     "px_poi" AS px_poi,
+    "f_cl_3" AS f_cl_3,
     "px_cli" AS px_cli,
     "depot" AS depot,
     "no_cond" AS no_cond,
@@ -95,8 +97,8 @@ Description : Conditions clients
     "qte_rq_10" AS qte_rq_10,
     "uniq_id" AS uniq_id,
     "_etl_valid_from" AS _etl_source_timestamp,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'clcondi') }}
     WHERE "_etl_is_current" = TRUE

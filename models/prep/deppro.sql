@@ -12,8 +12,8 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'deppro') }} s WHERE s.cod_fou = t.cod_fou AND s.cod_pro = t.cod_pro AND s.depot = t.depot AND s._etl_is_current = TRUE){% endif %}",
-        "CREATE INDEX IF NOT EXISTS idx_deppro_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_deppro_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_deppro_pk_current ON {{ this }} USING btree (cod_fou, cod_pro, depot, _etl_is_current)",
         "ANALYZE {{ this }}"
     ]
 ) }}
@@ -22,10 +22,10 @@
     ============================================================================
     PREP MODEL : deppro
     ============================================================================
-    Generated : 2025-12-30 15:27:21
+    Generated : 2025-12-31 12:04:34
     Source    : ods.deppro
 Description : Infos produits par dépôt
-    Rows ODS  : 2,814,563
+    Rows ODS  : 2,815,334
     Cols ODS  : 104
     Cols PREP : 20 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
@@ -50,8 +50,8 @@ Description : Infos produits par dépôt
     "px_ttc" AS px_ttc,
     "dat_remp" AS dat_remp,
     "_etl_valid_from" AS _etl_source_timestamp,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'deppro') }}
     WHERE "_etl_is_current" = TRUE

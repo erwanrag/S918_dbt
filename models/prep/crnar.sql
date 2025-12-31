@@ -22,12 +22,12 @@
     ============================================================================
     PREP MODEL : crnar
     ============================================================================
-    Generated : 2025-12-30 15:26:56
+    Generated : 2025-12-30 16:59:58
     Source    : ods.crnar
 Description : Articles concurrents
-    Rows ODS  : 383,449
+    Rows ODS  : 384,320
     Cols ODS  : 59
-    Cols PREP : 24 (+ _prep_loaded_at)
+    Cols PREP : 25 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -48,6 +48,7 @@ Description : Articles concurrents
     "marque" AS marque,
     "zlo_1" AS zlo_1,
     "texte" AS texte,
+    "pp_uv" AS pp_uv,
     "cod_pro" AS cod_pro,
     "poid_brut_1" AS poid_brut_1,
     "poid_brut_2" AS poid_brut_2,

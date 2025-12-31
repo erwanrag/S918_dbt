@@ -1,5 +1,5 @@
 {{ config(
-    materialized='table',
+    materialized='incremental',
     meta = {
         'dagster': {
             'group': 'prep',
@@ -8,19 +8,27 @@
         },
         'description': 'Prix de vente tarif'
     },
+    unique_key=['cod_pro', 'no_tarif'],
+    incremental_strategy='merge',
+    on_schema_change='sync_all_columns',
+    post_hook=[
+        "CREATE INDEX IF NOT EXISTS idx_prprixv_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_prprixv_pk_current ON {{ this }} USING btree (cod_pro, no_tarif, _etl_is_current)",
+        "ANALYZE {{ this }}"
+    ]
 ) }}
 
     /*
     ============================================================================
     PREP MODEL : prprixv
     ============================================================================
-    Generated : 2025-12-29 11:38:32
+    Generated : 2025-12-31 12:04:49
     Source    : ods.prprixv
 Description : Prix de vente tarif
-    Rows ODS  : 5,020,706
-    Cols ODS  : 121
-    Cols PREP : 44 (+ _prep_loaded_at)
-    Strategy  : TABLE
+    Rows ODS  : 5,021,467
+    Cols ODS  : 119
+    Cols PREP : 45 (+ _prep_loaded_at)
+    Strategy  : INCREMENTAL
     ============================================================================
     */
 
@@ -28,6 +36,8 @@ Description : Prix de vente tarif
         "cod_pro" AS cod_pro,
     "no_tarif" AS no_tarif,
     "px_refv" AS px_refv,
+    "coef_t2" AS coef_t2,
+    "coef_t3" AS coef_t3,
     "coef_t4" AS coef_t4,
     "fpx_refv" AS fpx_refv,
     "qte_1" AS qte_1,
@@ -50,7 +60,6 @@ Description : Prix de vente tarif
     "px_vte_8" AS px_vte_8,
     "px_vte_9" AS px_vte_9,
     "px_vte_10" AS px_vte_10,
-    "coef_rq_2" AS coef_rq_2,
     "px_mini" AS px_mini,
     "dat_fpxv" AS dat_fpxv,
     "cod_cli" AS cod_cli,
@@ -65,9 +74,16 @@ Description : Prix de vente tarif
     "qte_rq_9" AS qte_rq_9,
     "qte_rq_10" AS qte_rq_10,
     "cod_rvt_vte" AS cod_rvt_vte,
-    "_etl_loaded_at" AS _etl_loaded_at,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'prprixv') }}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

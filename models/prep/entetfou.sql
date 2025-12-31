@@ -12,7 +12,9 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'entetfou') }} s WHERE s.uniq_id = t.uniq_id AND s._etl_is_current = TRUE){% endif %}"
+        "CREATE INDEX IF NOT EXISTS idx_entetfou_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_entetfou_pk_current ON {{ this }} USING btree (uniq_id, _etl_is_current)",
+        "ANALYZE {{ this }}"
     ]
 ) }}
 
@@ -20,11 +22,11 @@
     ============================================================================
     PREP MODEL : entetfou
     ============================================================================
-    Generated : 2025-12-30 15:26:59
+    Generated : 2025-12-31 12:04:29
     Source    : ods.entetfou
 Description : Entêtes fournisseurs
-    Rows ODS  : 6,603
-    Cols ODS  : 272
+    Rows ODS  : 6,697
+    Cols ODS  : 268
     Cols PREP : 129 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
@@ -70,6 +72,7 @@ Description : Entêtes fournisseurs
     "znu_2" AS znu_2,
     "znu_3" AS znu_3,
     "znu_4" AS znu_4,
+    "zta_1" AS zta_1,
     "zta_2" AS zta_2,
     "zta_4" AS zta_4,
     "zda_5" AS zda_5,
@@ -155,10 +158,9 @@ Description : Entêtes fournisseurs
     "pal_sol" AS pal_sol,
     "annonce" AS annonce,
     "cod_fop" AS cod_fop,
-    "_etl_loaded_at" AS _etl_loaded_at,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'entetfou') }}
     WHERE "_etl_is_current" = TRUE

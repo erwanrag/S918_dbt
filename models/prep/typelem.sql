@@ -1,5 +1,5 @@
 {{ config(
-    materialized='table',
+    materialized='incremental',
     meta = {
         'dagster': {
             'group': 'prep',
@@ -8,24 +8,33 @@
         },
         'description': 'Types d''éléments'
     },
+    unique_key=['ndos', 'typ_fich', 'typ_elem'],
+    incremental_strategy='merge',
+    on_schema_change='sync_all_columns',
+    post_hook=[
+        "CREATE INDEX IF NOT EXISTS idx_typelem_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_typelem_pk_current ON {{ this }} USING btree (ndos, typ_fich, typ_elem, _etl_is_current)",
+        "ANALYZE {{ this }}"
+    ]
 ) }}
 
     /*
     ============================================================================
     PREP MODEL : typelem
     ============================================================================
-    Generated : 2025-12-29 11:38:40
+    Generated : 2025-12-31 12:04:45
     Source    : ods.typelem
 Description : Types d'éléments
     Rows ODS  : 43
-    Cols ODS  : 153
-    Cols PREP : 32 (+ _prep_loaded_at)
-    Strategy  : TABLE
+    Cols ODS  : 151
+    Cols PREP : 33 (+ _prep_loaded_at)
+    Strategy  : INCREMENTAL
     ============================================================================
     */
 
     SELECT
-        "typ_fich" AS typ_fich,
+        "ndos" AS ndos,
+    "typ_fich" AS typ_fich,
     "typ_elem" AS typ_elem,
     "sous_type" AS sous_type,
     "lib_elem" AS lib_elem,
@@ -53,9 +62,16 @@ Description : Types d'éléments
     "commande" AS commande,
     "mt_mini" AS mt_mini,
     "contenant" AS contenant,
-    "_etl_loaded_at" AS _etl_loaded_at,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'typelem') }}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

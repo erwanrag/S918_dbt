@@ -22,12 +22,12 @@
     ============================================================================
     PREP MODEL : focondi
     ============================================================================
-    Generated : 2025-12-30 15:27:05
+    Generated : 2025-12-30 17:00:06
     Source    : ods.focondi
 Description : Conditions fournisseurs
-    Rows ODS  : 104,492
-    Cols ODS  : 125
-    Cols PREP : 77 (+ _prep_loaded_at)
+    Rows ODS  : 103,408
+    Cols ODS  : 122
+    Cols PREP : 76 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -108,12 +108,10 @@ Description : Conditions fournisseurs
     "_etl_hashdiff" AS _etl_hashdiff,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_run_id" AS _etl_run_id,
-    "_etl_is_current" AS _etl_is_current,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'focondi') }}
-    WHERE "_etl_is_current" = TRUE
     {% if is_incremental() %}
-    AND "_etl_valid_from" > (
+    WHERE "_etl_valid_from" > (
         SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
         FROM {{ this }}
     )

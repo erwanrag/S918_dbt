@@ -1,5 +1,5 @@
 {{ config(
-    materialized='table',
+    materialized='incremental',
     meta = {
         'dagster': {
             'group': 'prep',
@@ -8,19 +8,26 @@
         },
         'description': 'Table générique GCO'
     },
+    unique_key='_etl_hashdiff',
+    incremental_strategy='merge',
+    on_schema_change='sync_all_columns',
+    post_hook=[
+        "CREATE INDEX IF NOT EXISTS idx_tabgco_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "ANALYZE {{ this }}"
+    ]
 ) }}
 
     /*
     ============================================================================
     PREP MODEL : tabgco
     ============================================================================
-    Generated : 2025-12-29 11:38:40
+    Generated : 2025-12-31 12:04:45
     Source    : ods.tabgco
 Description : Table générique GCO
-    Rows ODS  : 6,117
-    Cols ODS  : 291
-    Cols PREP : 77 (+ _prep_loaded_at)
-    Strategy  : TABLE
+    Rows ODS  : 6,118
+    Cols ODS  : 289
+    Cols PREP : 81 (+ _prep_loaded_at)
+    Strategy  : INCREMENTAL
     ============================================================================
     */
 
@@ -66,6 +73,7 @@ Description : Table générique GCO
     "no_fax_1" AS no_fax_1,
     "no_fax_2" AS no_fax_2,
     "no_fax_3" AS no_fax_3,
+    "type_tf_1" AS type_tf_1,
     "mel" AS mel,
     "no_port" AS no_port,
     "min_t" AS min_t,
@@ -96,11 +104,21 @@ Description : Table générique GCO
     "WEB" AS web,
     "datent" AS datent,
     "nobur" AS nobur,
+    "secta_imp_1" AS secta_imp_1,
+    "secta_imp_2" AS secta_imp_2,
     "non_sscc" AS non_sscc,
     "non_sor_sscc" AS non_sor_sscc,
-    "_etl_loaded_at" AS _etl_loaded_at,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
+    "_etl_hashdiff" AS _etl_hashdiff,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'tabgco') }}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     

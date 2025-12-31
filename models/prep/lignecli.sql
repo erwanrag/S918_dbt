@@ -11,7 +11,9 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'lignecli') }} s WHERE s.uniq_id = t.uniq_id AND s._etl_is_current = TRUE){% endif %}"
+        "CREATE INDEX IF NOT EXISTS idx_lignecli_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_lignecli_pk_current ON {{ this }} USING btree (uniq_id, _etl_is_current)",
+        "ANALYZE {{ this }}"
     ]
 ) }}
 
@@ -19,11 +21,11 @@
     ============================================================================
     PREP MODEL : lignecli
     ============================================================================
-    Generated : 2025-12-30 15:27:26
+    Generated : 2025-12-31 12:04:56
     Source    : ods.lignecli
-    Rows ODS  : 50,272
-    Cols ODS  : 421
-    Cols PREP : 178 (+ _prep_loaded_at)
+    Rows ODS  : 51,862
+    Cols ODS  : 417
+    Cols PREP : 179 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -71,10 +73,12 @@
     "pmp" AS pmp,
     "cde_fou" AS cde_fou,
     "zal_1" AS zal_1,
+    "zal_2" AS zal_2,
     "zal_3" AS zal_3,
     "znu_3" AS znu_3,
     "znu_5" AS znu_5,
     "zta_1" AS zta_1,
+    "zta_2" AS zta_2,
     "zta_3" AS zta_3,
     "zta_4" AS zta_4,
     "zda_2" AS zda_2,
@@ -202,10 +206,9 @@
     "gen_con" AS gen_con,
     "cod_nom" AS cod_nom,
     "mt_titresto" AS mt_titresto,
-    "_etl_loaded_at" AS _etl_loaded_at,
-    "_etl_run_id" AS _etl_run_id,
     "_etl_valid_from" AS _etl_source_timestamp,
     "_etl_is_current" AS _etl_is_current,
+    "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'lignecli') }}
     WHERE "_etl_is_current" = TRUE

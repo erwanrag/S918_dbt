@@ -12,9 +12,8 @@
     incremental_strategy='merge',
     on_schema_change='sync_all_columns',
     post_hook=[
-        "{% if is_incremental() %}DELETE FROM {{ this }} t WHERE NOT EXISTS (SELECT 1 FROM {{ source('ods', 'histoent') }} s WHERE s.uniq_id = t.uniq_id){% endif %}",
-        "CREATE UNIQUE INDEX IF NOT EXISTS histoent_pkey ON {{ this }} USING btree (uniq_id)",
-        "CREATE INDEX IF NOT EXISTS idx_histoent_etl_source_timestamp ON {{ this }} USING btree (_etl_source_timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_histoent_current ON {{ this }} USING btree (_etl_is_current) WHERE (_etl_is_current = true)",
+        "CREATE INDEX IF NOT EXISTS idx_histoent_pk_current ON {{ this }} USING btree (uniq_id, _etl_is_current)",
         "ANALYZE {{ this }}"
     ]
 ) }}
@@ -23,12 +22,12 @@
     ============================================================================
     PREP MODEL : histoent
     ============================================================================
-    Generated : 2025-12-29 11:38:42
+    Generated : 2025-12-31 12:04:35
     Source    : ods.histoent
 Description : Historique entêtes
-    Rows ODS  : 1,107,630
-    Cols ODS  : 450
-    Cols PREP : 220 (+ _prep_loaded_at)
+    Rows ODS  : 5,163
+    Cols ODS  : 453
+    Cols PREP : 210 (+ _prep_loaded_at)
     Strategy  : INCREMENTAL
     ============================================================================
     */
@@ -52,7 +51,6 @@ Description : Historique entêtes
     "adr_fac_1" AS adr_fac_1,
     "adr_fac_2" AS adr_fac_2,
     "adr_fac_3" AS adr_fac_3,
-    "k_postf" AS k_postf,
     "villef" AS villef,
     "paysf" AS paysf,
     "chif_bl" AS chif_bl,
@@ -71,7 +69,6 @@ Description : Historique entêtes
     "iden_ce" AS iden_ce,
     "code_reg" AS code_reg,
     "code_ech" AS code_ech,
-    "nb_ech" AS nb_ech,
     "langue" AS langue,
     "regime" AS regime,
     "type_fac" AS type_fac,
@@ -100,7 +97,6 @@ Description : Historique entêtes
     "zal_1" AS zal_1,
     "zal_2" AS zal_2,
     "zal_3" AS zal_3,
-    "zal_4" AS zal_4,
     "zal_5" AS zal_5,
     "znu_1" AS znu_1,
     "znu_2" AS znu_2,
@@ -121,7 +117,6 @@ Description : Historique entêtes
     "edt_bl" AS edt_bl,
     "edt_fac" AS edt_fac,
     "maj_ach" AS maj_ach,
-    "rem_glo_1" AS rem_glo_1,
     "qui_liv" AS qui_liv,
     "ori_cde" AS ori_cde,
     "palette" AS palette,
@@ -142,10 +137,6 @@ Description : Historique entêtes
     "dat_ech" AS dat_ech,
     "bl_ori" AS bl_ori,
     "mt_fact" AS mt_fact,
-    "dafaca_1" AS dafaca_1,
-    "mtfaca_1" AS mtfaca_1,
-    "mtfaca_2" AS mtfaca_2,
-    "mtfaca_3" AS mtfaca_3,
     "transit" AS transit,
     "motif_av" AS motif_av,
     "mt_ht_dev" AS mt_ht_dev,
@@ -200,7 +191,6 @@ Description : Historique entêtes
     "villec" AS villec,
     "paysc" AS paysc,
     "k_post2c" AS k_post2c,
-    "edi_refcde" AS edi_refcde,
     "no_tar_loc" AS no_tar_loc,
     "no_carte" AS no_carte,
     "typ_elem" AS typ_elem,
@@ -211,8 +201,6 @@ Description : Historique entêtes
     "cod_for" AS cod_for,
     "cde_ini" AS cde_ini,
     "pays_e" AS pays_e,
-    "hr_liv" AS hr_liv,
-    "marge_p" AS marge_p,
     "typ_fac_edi" AS typ_fac_edi,
     "prix_franco" AS prix_franco,
     "cod_site" AS cod_site,
@@ -252,13 +240,15 @@ Description : Historique entêtes
     "cod_fop" AS cod_fop,
     "mt_titresto" AS mt_titresto,
     "_etl_valid_from" AS _etl_source_timestamp,
+    "_etl_is_current" AS _etl_is_current,
     "_etl_run_id" AS _etl_run_id,
     CURRENT_TIMESTAMP AS _prep_loaded_at
     FROM {{ source('ods', 'histoent') }}
-{% if is_incremental() %}
-WHERE "_etl_valid_from" > (
-    SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
-    FROM {{ this }}
-)
-{% endif %}
+    WHERE "_etl_is_current" = TRUE
+    {% if is_incremental() %}
+    AND "_etl_valid_from" > (
+        SELECT COALESCE(MAX(_etl_source_timestamp), '1900-01-01'::timestamp)
+        FROM {{ this }}
+    )
+    {% endif %}
     
