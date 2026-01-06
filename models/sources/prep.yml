@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: prep
+    schema: prep
+    description: "Zone PREP – données physiques réutilisables"
+    tables:
+      - name: typelem_src
+        description: "Typologie centrale des éléments métier"
+
+      - name: produit_src
+        description: "Données produits Proginov"
+
+      - name: tabgco_src
+        description: "Données GCO Proginov"

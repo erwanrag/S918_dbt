@@ -1,8 +1,0 @@
-version: 2
-
-sources:
-  - name: prep
-    schema: prep
-    tables:
-      - name: typelem
-        description: "Typologie centrale des éléments métier"
