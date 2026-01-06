@@ -1,0 +1,36 @@
+models:
+  - name: dim_type_element
+    description: "Dimension des types d’éléments Proginov"
+    columns:
+      - name: type_element_key
+        tests:
+          - not_null
+          - unique
+
+      - name: type_niveau
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['P', 'C', 'F']
+
+      - name: type_elem
+        tests:
+          - not_null
+        
+  - name: dim_produit
+    description: "Dimension produit Proginov"
+    columns:
+      - name: produit_key
+        tests:
+          - not_null
+          - unique
+
+      - name: cod_pro
+        tests:
+          - not_null
+          - unique
+
+      - name: statut_libelle
+        tests:
+          - not_null
+
