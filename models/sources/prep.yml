@@ -3,13 +3,225 @@ version: 2
 sources:
   - name: prep
     schema: prep
-    description: "Zone PREP – données physiques réutilisables"
+    description: "Zone PREP - Tables staging générées automatiquement depuis ODS"
+    
+    # Freshness par défaut (alerter si > 2 jours)
+    freshness:
+      warn_after: {count: 1, period: day}
+      error_after: {count: 2, period: day}
+    
+    # Colonnes ETL communes à toutes les tables PREP
+    # loaded_at_field: _prep_loaded_at
+    
     tables:
-      - name: typelem_src
-        description: "Typologie centrale des éléments métier"
-
-      - name: produit_src
-        description: "Données produits Proginov"
-
-      - name: tabgco_src
-        description: "Données GCO Proginov"
+      # =======================================================================
+      # RÉFÉRENTIELS
+      # =======================================================================
+      
+      - name: typelem
+        description: "Typologie des éléments Proginov (produits, clients, fournisseurs)"
+        columns:
+          - name: typ_fich
+            description: "Type de fiche (P=Produit, C=Client, F=Fournisseur)"
+          - name: typ_elem
+            description: "Code du type d'élément"
+          - name: sous_type
+            description: "Sous-type optionnel"
+      
+      - name: tabgco
+        description: "Tables de gestion commerciale (familles, sous-familles, etc.)"
+        columns:
+          - name: type_tab
+            description: "Type de table (FA=Famille, SF=Sous-famille, etc.)"
+          - name: n_tab
+            description: "Numéro dans la table"
+          - name: inti_tab
+            description: "Intitulé de la valeur"
+      
+      # =======================================================================
+      # ENTITÉS PRINCIPALES
+      # =======================================================================
+      
+      - name: produit
+        description: "Produits Proginov"
+        columns:
+          - name: cod_pro
+            description: "Code produit (clé primaire)"
+          - name: nom_pro
+            description: "Nom du produit"
+          - name: refint
+            description: "Référence interne"
+          - name: typ_elem
+            description: "Type d'élément (AR, ARC, etc.)"
+          - name: statut
+            description: "Statut du produit (0=Actif, 9=À supprimer)"
+          - name: _etl_is_current
+            description: "Flag SCD2 - version courante"
+      
+      - name: client
+        description: "Clients Proginov"
+        columns:
+          - name: cod_cli
+            description: "Code client (clé primaire)"
+          - name: nom_cli
+            description: "Nom du client"
+          - name: typ_elem
+            description: "Type d'élément client"
+          - name: _etl_is_current
+            description: "Flag SCD2 - version courante"
+      
+      - name: fournis
+        description: "Fournisseurs Proginov"
+        columns:
+          - name: cod_fou
+            description: "Code fournisseur (clé primaire)"
+          - name: nom_fou
+            description: "Nom du fournisseur"
+          - name: _etl_is_current
+            description: "Flag SCD2 - version courante"
+      
+      # =======================================================================
+      # TRANSACTIONNEL - STOCK
+      # =======================================================================
+      
+      - name: stock
+        description: "Stocks par dépôt et magasin"
+        columns:
+          - name: cod_pro
+            description: "Code produit"
+          - name: depot
+            description: "Code dépôt"
+          - name: magasin
+            description: "Code magasin"
+          - name: stock
+            description: "Quantité en stock"
+      
+      - name: deppro
+        description: "Dépôts produits"
+        columns:
+          - name: cod_pro
+            description: "Code produit"
+          - name: depot
+            description: "Code dépôt"
+      
+      # =======================================================================
+      # TRANSACTIONNEL - COMMANDES
+      # =======================================================================
+      
+      - name: entetcli
+        description: "Entêtes commandes clients"
+        columns:
+          - name: no_cde
+            description: "Numéro de commande"
+          - name: cod_cli
+            description: "Code client"
+          - name: dat_cde
+            description: "Date de commande"
+      
+      - name: lignecli
+        description: "Lignes commandes clients"
+        columns:
+          - name: no_cde
+            description: "Numéro de commande"
+          - name: cod_pro
+            description: "Code produit"
+          - name: qte_cde
+            description: "Quantité commandée"
+      
+      - name: entetfou
+        description: "Entêtes commandes fournisseurs"
+        columns:
+          - name: no_cde
+            description: "Numéro de commande"
+          - name: cod_fou
+            description: "Code fournisseur"
+          - name: dat_cde
+            description: "Date de commande"
+      
+      - name: lignefou
+        description: "Lignes commandes fournisseurs"
+        columns:
+          - name: no_cde
+            description: "Numéro de commande"
+          - name: cod_pro
+            description: "Code produit"
+          - name: qte_cde
+            description: "Quantité commandée"
+      
+      # =======================================================================
+      # HISTORIQUE & CONDITIONS
+      # =======================================================================
+      
+      - name: histoent
+        description: "Historique entêtes documents"
+      
+      - name: histolig
+        description: "Historique lignes documents"
+      
+      - name: clcondi
+        description: "Conditions commerciales clients"
+        columns:
+          - name: cod_cli
+            description: "Code client"
+      
+      - name: focondi
+        description: "Conditions commerciales fournisseurs"
+        columns:
+          - name: cod_fou
+            description: "Code fournisseur"
+      
+      # =======================================================================
+      # PRIX
+      # =======================================================================
+      
+      - name: prprixv
+        description: "Prix de vente produits"
+        columns:
+          - name: cod_pro
+            description: "Code produit"
+      
+      - name: prmultfo
+        description: "Prix multiples fournisseurs"
+        columns:
+          - name: cod_fou
+            description: "Code fournisseur"
+          - name: cod_pro
+            description: "Code produit"
+      
+      - name: hisprixa
+        description: "Historique prix achats"
+      
+      # =======================================================================
+      # AUTRES
+      # =======================================================================
+      
+      - name: crn
+        description: "CRN (à documenter)"
+      
+      - name: crnar
+        description: "CRN Articles (à documenter)"
+      
+      - name: prnomenc
+        description: "Nomenclatures produits"
+      
+      - name: lldespro
+        description: "Libellés et descriptions produits"
+      
+      - name: soumission
+        description: "Soumissions"
+      
+      # Listes de valeurs
+      - name: lisval
+        description: "Listes de valeurs génériques"
+      
+      - name: lisval_fou_production
+        description: "Listes valeurs - Fournisseurs production"
+      
+      - name: lisval_produits_lies
+        description: "Listes valeurs - Produits liés"
+      
+      - name: lisval_produits_vehicules
+        description: "Listes valeurs - Produits véhicules"
+      
+      - name: lisval_slimstock
+        description: "Listes valeurs - Slimstock"

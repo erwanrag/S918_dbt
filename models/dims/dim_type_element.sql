@@ -32,6 +32,6 @@ select
     nmc_com   as autorise_achat,
     stat      as statut
 
-from {{ source('prep', 'typelem_src') }}
+from {{ source('prep', 'typelem') }}
 where typ_elem is not null AND typ_fich IN ('P', 'C', 'F')
 order by typ_fich, typ_elem, sous_type

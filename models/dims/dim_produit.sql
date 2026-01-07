@@ -7,7 +7,7 @@
 with produit as (
 
     select *
-    from {{ ref('prep_produit') }}
+    from {{ source('prep', 'produit') }}
     where typ_elem in ('AR', 'ARC')
       and statut < 9
       and consigne = false
@@ -67,8 +67,8 @@ select
     end as statut_libelle,
 
     -- 🧪 qualité
-    p.qualite,
-    case p.qualite
+    p.zta_3 as qualite,
+    case p.zta_3
         when 'OE'  then 'Original Equipment'
         when 'OEM' then 'Original Equipment Manufacturer'
         when 'PMQ' then 'Pièce Marché Qualité'
@@ -90,9 +90,9 @@ select
     p._prep_loaded_at
 
 from produit p
-left join {{ ref('type_element') }} te
+left join {{ ref('dim_type_element') }} te
     on te.type_elem = p.typ_elem
-   and coalesce(te.sous_type, '_NULL') = coalesce(p.sous_type, '_NULL')
+    and coalesce(te.sous_type, '_NULL') = coalesce(p.sous_type, '_NULL')
 
 left join famille f
     on f.famille = p.famille

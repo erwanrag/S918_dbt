@@ -35,23 +35,27 @@ models:
       +materialized: incremental
       +schema: prep
       +on_schema_change: sync_all_columns
-      +tags: ["prep"]
+      +tags: ["prep", "layer:prep"]
 
     # ======================
     # DIMENSIONS
     # ======================
-    dim:
+    dims:  # ✅ Renommé de "dim"
       +materialized: table
-      +schema: dm
-      +tags: ["dim"]
+      +schema: dims  # ✅ Schema séparé
+      +tags: ["dimension", "layer:dims"]
 
     # ======================
-    # FACTS
+    # MARTS (facts + analytics)
     # ======================
-    fact:
+    marts:  # ✅ Renommé de "fact"
       +materialized: incremental
-      +schema: dm
-      +tags: ["fact"]
+      +schema: marts
+      +tags: ["fact", "layer:marts"]
+      
+      analytics:
+        +materialized: view
+        +tags: ["analytics", "layer:marts"]
 # Variables globales
 vars:
   load_mode: 'INCREMENTAL'  # FULL, INCREMENTAL, FULL_RESET

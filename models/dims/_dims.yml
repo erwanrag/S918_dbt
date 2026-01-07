@@ -1,0 +1,98 @@
+version: 2
+
+models:
+  - name: dim_type_element
+    description: "Dimension des types d'éléments Proginov"
+    columns:
+      - name: type_element_key
+        tests:
+          - not_null
+          - unique
+      - name: type_niveau
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['P', 'C', 'F']
+      - name: type_elem
+        tests:
+          - not_null
+        
+  - name: dim_produit
+    columns:
+      - name: cod_pro
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_client
+    description: "Dimension client Proginov"
+    columns:
+      - name: client_key
+        tests:
+          - not_null
+          - unique
+      - name: client_id
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_fournisseur
+    description: "Dimension fournisseur Proginov"
+    columns:
+      - name: fournisseur_key
+        tests:
+          - not_null
+          - unique
+      - name: fournisseur_id
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_depot
+    description: "Dimension dépôt/entrepôt"
+    columns:
+      - name: depot_key
+        tests:
+          - not_null
+          - unique
+      - name: depot_id
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_famille
+    description: "Dimension famille produit"
+    columns:
+      - name: famille_key
+        tests:
+          - not_null
+          - unique
+      - name: famille_id
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_sous_famille
+    description: "Dimension sous-famille produit"
+    columns:
+      - name: sous_famille_key
+        tests:
+          - not_null
+          - unique
+      - name: sous_famille_id
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_marque
+    description: "Dimension marque concurrent"
+    columns:
+      - name: marque_key
+        tests:
+          - not_null
+          - unique
+      - name: marque_code
+        tests:
+          - not_null
+          - unique
+
