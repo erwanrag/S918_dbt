@@ -20,9 +20,7 @@ with fournisseur_current as (
   select *
   from {{ source('prep', 'fournis') }}
   where _etl_is_current = true
-    and typ_elem in ('FOU', 'CST', 'TRM', 'TRS', 'VAR')
     and statut < 9  -- Exclure fournisseurs à supprimer
-
 ),
 
 interco_fournisseurs as (
@@ -40,6 +38,7 @@ type_element as (
   
   select *
   from {{ ref('dim_type_element') }}
+  where type_niveau = 'F'  -- Filtrer uniquement les types liés aux fournisseurs
 
 )
 

@@ -1,7 +1,8 @@
 {{ config(
     materialized = 'table',
-    schema = 'dim',
-    alias = 'produit'
+    schema = 'dims',
+    alias = 'produit',
+    tags = ['dimension', 'layer:dims']
 ) }}
 
 with produit as (

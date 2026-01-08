@@ -1,0 +1,12 @@
+{
+  "dbt.dbtIntegration.dbtExecutionMode": "cli",
+  "dbt.dbtPath": "/home/eragueneau/.dbt-venv/bin/dbt",
+  "dbt.pythonPath": "/home/eragueneau/.dbt-venv/bin/python",
+  "dbt.dbtProjectPath": "/data/dbt/etl_db",
+  "dbt.profiles.directory": "/home/eragueneau/.dbt",
+  "dbt.target": "prod",
+  
+  "files.associations": {
+    "*.sql": "jinja-sql"
+  }
+}

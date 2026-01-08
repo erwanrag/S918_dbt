@@ -1,7 +1,8 @@
 {{ config(
     materialized = 'table',
-    schema = 'dim',
-    alias = 'type_element'
+    schema = 'dims',
+    alias = 'type_element',
+    tags = ['dimension', 'layer:dims']
 ) }}
 
 select

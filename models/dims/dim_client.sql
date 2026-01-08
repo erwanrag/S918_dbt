@@ -24,22 +24,6 @@ with client_current as (
 
 ),
 
-client_devise_ranked as (
-  select
-    cod_cli,
-    devise,
-    row_number() over (partition by cod_cli order by _etl_valid_from desc) as rn
-  from {{ source('ods', 'clcondi') }}
-  where _etl_is_current = true
-    and devise is not null
-),
-
-client_devise as (
-  select cod_cli, devise
-  from client_devise_ranked
-  where rn = 1
-),
-
 interco_clients as (
   
   -- Clients intercompany depuis tabgco
@@ -67,6 +51,7 @@ type_element as (
   
   select *
   from {{ ref('dim_type_element') }}
+  where type_niveau = 'C'  -- Filtrer uniquement les types liés aux clients
 
 )
 
@@ -127,7 +112,6 @@ select
   
   c.no_tarif as numero_tarif,
   upper(c.famille) as famille_client,
-  coalesce(cd.devise, 'EUR') as devise,
   
   -- ==========================================================================
   -- 📅 DATES MÉTIER
@@ -149,10 +133,6 @@ from client_current c
 
 left join type_element te
   on te.type_elem = c.typ_elem
-  and coalesce(te.sous_type, '_NULL') = coalesce(c.sous_type, '_NULL')
-
-left join client_devise cd
-  on cd.cod_cli = c.cod_cli
 
 left join interco_clients ic
   on ic.cod_cli = c.cod_cli
